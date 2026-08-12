@@ -7,6 +7,7 @@ import { SalesDashboardView } from '@/features/dashboard/components/SalesDashboa
 import { WarehouseDashboardView } from '@/features/dashboard/components/WarehouseDashboardView';
 import { AccountsDashboardView } from '@/features/dashboard/components/AccountsDashboardView';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
+import { API_BASE_URL } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,8 +92,16 @@ export default async function DashboardPage() {
                 metrics.backendOnline ? 'bg-brand-500 animate-pulse' : 'bg-amber-500'
               }`}
             ></span>
-            <span className="text-gray-400">Live API:</span>
-            <span className="font-mono text-brand-400 font-medium">stockx-7dz7.onrender.com</span>
+            <span className="text-gray-400">API Host:</span>
+            <span className="font-mono text-brand-400 font-medium">
+              {(() => {
+                try {
+                  return new URL(API_BASE_URL).host;
+                } catch {
+                  return API_BASE_URL;
+                }
+              })()}
+            </span>
           </div>
         </div>
 
