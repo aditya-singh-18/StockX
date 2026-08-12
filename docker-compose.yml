@@ -1,9 +1,12 @@
 version: '3.8'
 
 services:
+  # ------------------------------------------------------------
+  # 1. PostgreSQL Database Service
+  # ------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
-    container_name: stockflow-postgres
+    container_name: stockx-postgres
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -13,11 +16,61 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - stockx-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-stockflow_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # ------------------------------------------------------------
+  # 2. StockX Backend API Service (NestJS)
+  # ------------------------------------------------------------
+  backend:
+    build:
+      context: ./StockX-backend
+      dockerfile: Dockerfile
+    container_name: stockx-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-stockflow_db}?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-stockflow_super_secret_jwt_access_key_2026}
+      CORS_ORIGIN: "http://localhost:3000"
+    ports:
+      - "3001:3001"
+    networks:
+      - stockx-network
+
+  # ------------------------------------------------------------
+  # 3. StockX Frontend Portal Service (Next.js 15)
+  # ------------------------------------------------------------
+  frontend:
+    build:
+      context: ./StockX-frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+    container_name: stockx-frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    networks:
+      - stockx-network
+
 volumes:
   postgres_data:
+    driver: local
+
+networks:
+  stockx-network:
+    driver: bridge
