@@ -1,6 +1,5 @@
 // ============================================================
 // Mini ERP + CRM Operations Portal — Prisma Schema
-// Fundsroom Infotech Case Study
 // ============================================================
 
 generator client {
@@ -64,8 +63,22 @@ model User {
   customerNotes   CustomerNote[]
   stockMovements  StockMovement[]
   challansCreated Challan[]
+  refreshTokens   RefreshToken[]
 
   @@map("users")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  tokenHash  String    @unique
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
 
 // ------------------------------------------------------------
@@ -129,6 +142,15 @@ enum StockMovementType {
   OUT
 }
 
+enum MovementSource {
+  MANUAL_ADJUSTMENT
+  CHALLAN_CONFIRMED
+  CHALLAN_CANCELLED_REVERSAL
+  PURCHASE_RECEIVED
+  DAMAGED
+  RETURNED
+}
+
 model Product {
   id           String   @id @default(uuid())
   name         String
@@ -150,11 +172,13 @@ model Product {
 }
 
 model StockMovement {
-  id        String            @id @default(uuid())
-  quantity  Int
-  type      StockMovementType
-  reason    String
-  createdAt DateTime          @default(now())
+  id           String            @id @default(uuid())
+  quantity     Int
+  type         StockMovementType
+  source       MovementSource
+  note         String?
+  balanceAfter Int
+  createdAt    DateTime          @default(now())
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
@@ -185,6 +209,7 @@ model Challan {
   challanNo   String        @unique // auto-generated e.g. CH-2026-00001
   status      ChallanStatus @default(DRAFT)
   totalQty    Int           @default(0)
+  totalAmount Decimal       @db.Decimal(10, 2) @default(0)
   createdAt   DateTime      @default(now())
   confirmedAt DateTime?
 
