@@ -34,8 +34,28 @@ export interface Challan {
   createdBy?: {
     id: string;
     name: string;
+    email?: string;
   };
+  confirmedById?: string | null;
+  confirmedBy?: {
+    id: string;
+    name: string;
+    email?: string;
+  } | null;
   items?: ChallanItem[];
+  stockMovements?: {
+    id: string;
+    quantity: number;
+    type: string;
+    source?: string;
+    note?: string | null;
+    createdAt: string;
+    createdBy?: {
+      id: string;
+      name: string;
+      email?: string;
+    };
+  }[];
   _count?: {
     items: number;
   };

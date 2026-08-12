@@ -9,23 +9,30 @@ import {
 export async function getCustomers(
   query: CustomerQueryDto = {},
   token?: string,
-): Promise<{ data: Customer[]; total: number; totalPages: number }> {
+): Promise<{ data: Customer[]; total: number; totalPages: number; page: number; limit: number }> {
   const params = new URLSearchParams();
   if (query.page) params.set('page', String(query.page));
   if (query.limit) params.set('limit', String(query.limit));
-  if (query.search) params.set('search', query.search);
+  if (query.search) params.set('search', query.search.trim());
   if (query.status) params.set('status', query.status);
   if (query.type) params.set('type', query.type);
 
-  const url = `${API_BASE_URL}/customers?${params.toString()}`;
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const result = await apiFetch<any>(`/customers?${params.toString()}`, {}, token);
 
-  const res = await fetch(url, { headers, cache: 'no-store' });
-  if (!res.ok) {
-    return { data: [], total: 0, totalPages: 1 };
+  if (result.data) {
+    return {
+      data: Array.isArray(result.data.data)
+        ? result.data.data
+        : Array.isArray(result.data)
+        ? result.data
+        : [],
+      total: result.data.total ?? 0,
+      totalPages: result.data.totalPages ?? 1,
+      page: result.data.page ?? (query.page || 1),
+      limit: result.data.limit ?? (query.limit || 10),
+    };
   }
-  return res.json();
+  return { data: [], total: 0, totalPages: 1, page: query.page || 1, limit: query.limit || 10 };
 }
 
 export async function getCustomerById(

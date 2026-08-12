@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 import { Challan } from '../types/challans.types';
-import { cancelChallan } from '../services/challans.service';
+import { cancelChallan, getChallanById } from '../services/challans.service';
 import { RequirePermission } from '@/components/auth/RequirePermission';
 import { PERMISSIONS } from '@/lib/permissions';
 import { ConfirmChallanDialog } from './ConfirmChallanDialog';
 import { useToast } from '@/components/ui/Toast';
+import { useRouter } from 'next/navigation';
 import {
-  ScrollText,
   User,
   Phone,
   Calendar,
@@ -18,6 +18,7 @@ import {
   PackageCheck,
   AlertCircle,
   Loader2,
+  UserCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,6 +27,7 @@ interface ChallanDetailCardProps {
 }
 
 export function ChallanDetailCard({ initialChallan }: ChallanDetailCardProps) {
+  const router = useRouter();
   const { showToast } = useToast();
   const [challan, setChallan] = useState<Challan>(initialChallan);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -41,11 +43,40 @@ export function ChallanDetailCard({ initialChallan }: ChallanDetailCardProps) {
     } else {
       showToast(`Challan ${challan.challanNo} cancelled.`, 'success');
       setChallan((prev) => ({ ...prev, status: 'CANCELLED' }));
+      router.refresh();
     }
+  };
+
+  const handleConfirmSuccess = async () => {
+    const res = await getChallanById(challan.id);
+    if (res.data) {
+      setChallan(res.data);
+    } else {
+      setChallan((prev) => ({ ...prev, status: 'CONFIRMED', confirmedAt: new Date().toISOString() }));
+    }
+    router.refresh();
   };
 
   const isDraft = challan.status === 'DRAFT';
   const isConfirmed = challan.status === 'CONFIRMED';
+
+  const createdDateStr = new Date(challan.createdAt).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const confirmedDateStr = challan.confirmedAt
+    ? new Date(challan.confirmedAt).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null;
 
   return (
     <div className="space-y-6">
@@ -75,8 +106,17 @@ export function ChallanDetailCard({ initialChallan }: ChallanDetailCardProps) {
                 {challan.status}
               </span>
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Created by {challan.createdBy?.name || 'Sales Rep'} • Customer: {challan.customer?.name}
+            <p className="text-xs text-gray-400 mt-0.5 flex flex-wrap items-center gap-1.5">
+              <span>Created by <strong className="text-gray-200">{challan.createdBy?.name || 'Sales Rep'}</strong> on {createdDateStr}</span>
+              {isConfirmed && (
+                <>
+                  <span className="text-gray-600">•</span>
+                  <span className="text-emerald-400 font-medium">
+                    Confirmed by <strong className="text-emerald-300">{challan.confirmedBy?.name || challan.stockMovements?.[0]?.createdBy?.name || challan.createdBy?.name || 'Staff User'}</strong>
+                    {confirmedDateStr ? ` on ${confirmedDateStr}` : ''}
+                  </span>
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -157,21 +197,37 @@ export function ChallanDetailCard({ initialChallan }: ChallanDetailCardProps) {
               </span>
             </div>
 
+            {/* Created By & Date */}
             <div className="pt-2 border-t border-[#27272A]">
-              <span className="text-gray-400 block mb-0.5">Created Date</span>
+              <span className="text-gray-400 block mb-0.5">Created By</span>
               <div className="flex items-center gap-2 text-gray-300 font-mono">
                 <Calendar className="w-3.5 h-3.5 text-gray-500" />
                 <span>
-                  {new Date(challan.createdAt).toLocaleString('en-IN', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {challan.createdBy?.name || 'Sales Rep'} • {createdDateStr}
                 </span>
               </div>
             </div>
+
+            {/* Confirmed By & Date (Shown if confirmed) */}
+            {isConfirmed && (
+              <div className="pt-2 border-t border-[#27272A] bg-emerald-950/20 p-2.5 rounded-lg border border-emerald-800/30">
+                <span className="text-emerald-400 font-medium block mb-0.5 flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Confirmed By</span>
+                </span>
+                <div className="text-emerald-200 font-mono text-[11px] mt-1 space-y-0.5">
+                  <strong className="block text-emerald-300">
+                    {challan.confirmedBy?.name || challan.stockMovements?.[0]?.createdBy?.name || challan.createdBy?.name || 'Staff User'}
+                  </strong>
+                  {(challan.confirmedBy?.email || challan.stockMovements?.[0]?.createdBy?.email) && (
+                    <span className="block text-emerald-400/80 text-[10px]">
+                      {challan.confirmedBy?.email || challan.stockMovements?.[0]?.createdBy?.email}
+                    </span>
+                  )}
+                  {confirmedDateStr && <span className="block text-gray-400 text-[10px]">on {confirmedDateStr}</span>}
+                </div>
+              </div>
+            )}
 
             {challan.notes && (
               <div className="pt-2 border-t border-[#27272A]">
@@ -236,7 +292,7 @@ export function ChallanDetailCard({ initialChallan }: ChallanDetailCardProps) {
         challanNo={challan.challanNo}
         totalAmount={challan.totalAmount}
         onClose={() => setIsConfirmOpen(false)}
-        onSuccess={() => setChallan((prev) => ({ ...prev, status: 'CONFIRMED' }))}
+        onSuccess={handleConfirmSuccess}
       />
     </div>
   );

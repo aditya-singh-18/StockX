@@ -1,5 +1,4 @@
 import React from 'react';
-import { cookies } from 'next/headers';
 import PortalLayout from '@/components/layout/PortalLayout';
 import { getDashboardData } from '@/features/dashboard/services/dashboard.service';
 import { AdminDashboardView } from '@/features/dashboard/components/AdminDashboardView';
@@ -7,32 +6,15 @@ import { SalesDashboardView } from '@/features/dashboard/components/SalesDashboa
 import { WarehouseDashboardView } from '@/features/dashboard/components/WarehouseDashboardView';
 import { AccountsDashboardView } from '@/features/dashboard/components/AccountsDashboardView';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
-import { API_BASE_URL } from '@/lib/api';
+import { getServerAuth } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('stockflow_access_token')?.value;
-  const userCookie = cookieStore.get('stockflow_user')?.value;
-
-  let user = null;
-  if (userCookie) {
-    try {
-      user = JSON.parse(decodeURIComponent(userCookie));
-    } catch {
-      try {
-        user = JSON.parse(userCookie);
-      } catch {
-        user = null;
-      }
-    }
-  }
-
-  const permissions: string[] = user?.permissions || [];
+  const { accessToken, user, permissions } = await getServerAuth();
 
   // Fetch real data from live backend
-  const { metrics, recentChallans } = await getDashboardData(accessToken);
+  const { metrics, recentChallans } = await getDashboardData(accessToken || undefined);
 
   // Render view based on permission capabilities (Zero hardcoded role strings!)
   const canManageUsers = hasPermission(permissions, PERMISSIONS.USER_MANAGE);
@@ -83,25 +65,6 @@ export default async function DashboardPage() {
             <p className="text-xs text-gray-400 mt-1">
               Logged in as <span className="font-mono text-brand-300">{user?.email}</span>
             </p>
-          </div>
-
-          {/* Live API Indicator */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#141416] border border-brand-500/30 rounded-lg text-xs font-medium text-gray-300 shadow-xs w-fit">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                metrics.backendOnline ? 'bg-brand-500 animate-pulse' : 'bg-amber-500'
-              }`}
-            ></span>
-            <span className="text-gray-400">API Host:</span>
-            <span className="font-mono text-brand-400 font-medium">
-              {(() => {
-                try {
-                  return new URL(API_BASE_URL).host;
-                } catch {
-                  return API_BASE_URL;
-                }
-              })()}
-            </span>
           </div>
         </div>
 

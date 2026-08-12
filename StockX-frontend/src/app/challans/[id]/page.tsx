@@ -1,9 +1,9 @@
 import React from 'react';
-import { cookies } from 'next/headers';
 import PortalLayout from '@/components/layout/PortalLayout';
 import { getChallanById } from '@/features/challans/services/challans.service';
 import { ChallanDetailCard } from '@/features/challans/components/ChallanDetailCard';
 import { notFound } from 'next/navigation';
+import { getServerAuth } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +15,7 @@ interface ChallanDetailPageProps {
 
 export default async function ChallanDetailPage({ params }: ChallanDetailPageProps) {
   const resolvedParams = await params;
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('stockflow_access_token')?.value;
+  const { accessToken } = await getServerAuth();
 
   const { data: challan } = await getChallanById(resolvedParams.id, accessToken);
 

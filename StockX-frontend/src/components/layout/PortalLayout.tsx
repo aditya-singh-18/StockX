@@ -1,29 +1,15 @@
 import React from 'react';
-import { cookies } from 'next/headers';
 import Sidebar from '@/components/Sidebar';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/components/ui/Toast';
+import { getServerAuth } from '@/lib/server-auth';
 
 export default async function PortalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const userCookie = cookieStore.get('stockflow_user')?.value;
-
-  let initialUser = null;
-  if (userCookie) {
-    try {
-      initialUser = JSON.parse(decodeURIComponent(userCookie));
-    } catch {
-      try {
-        initialUser = JSON.parse(userCookie);
-      } catch {
-        initialUser = null;
-      }
-    }
-  }
+  const { user: initialUser } = await getServerAuth();
 
   return (
     <AuthProvider initialUser={initialUser}>

@@ -11,35 +11,51 @@ export interface StockMovement {
   productId: string;
   quantity: number;
   type: 'IN' | 'OUT';
-  reason: string;
+  reason?: string;
+  source?: string;
+  note?: string | null;
   notes?: string | null;
+  balanceAfter?: number;
   createdAt: string;
+  createdBy?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
   user?: {
     id: string;
     name: string;
+    email?: string;
   };
 }
 
 export async function getProducts(
   query: ProductQueryDto = {},
   token?: string,
-): Promise<{ data: Product[]; total: number; totalPages: number }> {
+): Promise<{ data: Product[]; total: number; totalPages: number; page: number; limit: number }> {
   const params = new URLSearchParams();
   if (query.page) params.set('page', String(query.page));
   if (query.limit) params.set('limit', String(query.limit));
-  if (query.search) params.set('search', query.search);
-  if (query.category) params.set('category', query.category);
-  if (query.lowStock !== undefined) params.set('lowStock', String(query.lowStock));
+  if (query.search) params.set('search', query.search.trim());
+  if (query.category) params.set('category', query.category.trim());
+  if (query.lowStock === true) params.set('lowStock', 'true');
 
-  const url = `${API_BASE_URL}/products?${params.toString()}`;
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const result = await apiFetch<any>(`/products?${params.toString()}`, {}, token);
 
-  const res = await fetch(url, { headers, cache: 'no-store' });
-  if (!res.ok) {
-    return { data: [], total: 0, totalPages: 1 };
+  if (result.data) {
+    return {
+      data: Array.isArray(result.data.data)
+        ? result.data.data
+        : Array.isArray(result.data)
+        ? result.data
+        : [],
+      total: result.data.total ?? 0,
+      totalPages: result.data.totalPages ?? 1,
+      page: result.data.page ?? (query.page || 1),
+      limit: result.data.limit ?? (query.limit || 10),
+    };
   }
-  return res.json();
+  return { data: [], total: 0, totalPages: 1, page: query.page || 1, limit: query.limit || 10 };
 }
 
 export async function getProductById(
@@ -105,6 +121,10 @@ export async function getProductStockHistory(
   token?: string,
 ): Promise<{ data: StockMovement[]; error: string | null }> {
   const result = await apiFetch<any>(`/products/${productId}/stock-movements`, {}, token);
-  const items = Array.isArray(result.data?.data) ? result.data.data : Array.isArray(result.data) ? result.data : [];
+  const items = Array.isArray(result.data?.data)
+    ? result.data.data
+    : Array.isArray(result.data)
+    ? result.data
+    : [];
   return { data: items, error: result.error };
 }

@@ -26,15 +26,41 @@ function getClientToken(): string | null {
   return fallback && fallback[1] ? decodeURIComponent(fallback[1]) : null;
 }
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function onRefreshed(newToken: string) {
+  refreshSubscribers.forEach((cb) => cb(newToken));
+  refreshSubscribers = [];
+}
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+async function trySilentRefresh(): Promise<string | null> {
+  try {
+    const res = await fetch('/api/refresh', { method: 'POST' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.success && data.accessToken) {
+      return data.accessToken;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Universal API fetch client with automatic error formatting & token support
+ * Universal API fetch client with automatic error formatting, token support & 401 silent refresh
  */
 export async function apiFetch<T = any>(
   endpoint: string,
   options: RequestInit = {},
   token?: string,
 ): Promise<{ data: T | null; error: string | null; status: number }> {
-  const activeToken = token || getClientToken();
+  let activeToken = token || getClientToken();
 
   let url: string;
   if (endpoint.startsWith('http')) {
@@ -56,12 +82,41 @@ export async function apiFetch<T = any>(
   }
 
   try {
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       ...options,
       headers,
     });
 
-    const status = response.status;
+    let status = response.status;
+
+    // Handle 401 Unauthorized with silent token refresh on client side
+    if (status === 401 && typeof window !== 'undefined' && !endpoint.includes('/auth/login')) {
+      let freshToken: string | null = null;
+      if (!isRefreshing) {
+        isRefreshing = true;
+        freshToken = await trySilentRefresh();
+        isRefreshing = false;
+        if (freshToken) {
+          onRefreshed(freshToken);
+        } else {
+          onRefreshed('');
+        }
+      } else {
+        // Wait for active token refresh to complete
+        freshToken = await new Promise<string>((resolve) => {
+          subscribeTokenRefresh(resolve);
+        });
+      }
+
+      if (freshToken) {
+        headers.set('Authorization', `Bearer ${freshToken}`);
+        response = await fetch(url, {
+          ...options,
+          headers,
+        });
+        status = response.status;
+      }
+    }
 
     if (status === 204) {
       return { data: null, error: null, status };

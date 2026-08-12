@@ -62,10 +62,11 @@ model User {
   roleId String
   role   Role   @relation(fields: [roleId], references: [id])
 
-  customerNotes   CustomerNote[]
-  stockMovements  StockMovement[]
-  challansCreated Challan[]
-  refreshTokens   RefreshToken[]
+  customerNotes     CustomerNote[]
+  stockMovements    StockMovement[]
+  challansCreated   Challan[] @relation("ChallanCreatedBy")
+  challansConfirmed Challan[] @relation("ChallanConfirmedBy")
+  refreshTokens     RefreshToken[]
 
   @@map("users")
 }
@@ -219,7 +220,10 @@ model Challan {
   customer   Customer @relation(fields: [customerId], references: [id])
 
   createdById String
-  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdBy   User   @relation("ChallanCreatedBy", fields: [createdById], references: [id])
+
+  confirmedById String?
+  confirmedBy   User?   @relation("ChallanConfirmedBy", fields: [confirmedById], references: [id])
 
   items          ChallanItem[]
   stockMovements StockMovement[]

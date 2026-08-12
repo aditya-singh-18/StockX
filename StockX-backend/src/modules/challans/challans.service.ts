@@ -100,6 +100,9 @@ export class ChallansService {
           createdBy: {
             select: { id: true, name: true, email: true },
           },
+          confirmedBy: {
+            select: { id: true, name: true, email: true },
+          },
         },
       });
 
@@ -177,6 +180,9 @@ export class ChallansService {
           createdBy: {
             select: { id: true, name: true, email: true },
           },
+          confirmedBy: {
+            select: { id: true, name: true, email: true },
+          },
         },
       }),
       this.prisma.challan.count({ where }),
@@ -224,6 +230,9 @@ export class ChallansService {
         createdBy: {
           select: { id: true, name: true, email: true },
         },
+        confirmedBy: {
+          select: { id: true, name: true, email: true },
+        },
       },
     });
 
@@ -238,6 +247,7 @@ export class ChallansService {
    * Confirm Sales Challan (THE CRITICAL ATOMIC TRANSACTION)
    * Deducts inventory atomically with DB-level conditional updates.
    * If ANY item fails stock check, rolls back the entire transaction.
+   * Sets confirmedById = userId (the user who calls confirm).
    */
   async confirm(id: string, userId: string) {
     return this.prisma.$transaction(async (tx) => {
@@ -311,12 +321,13 @@ export class ChallansService {
         stockMovementsCreated.push(movement);
       }
 
-      // 3. Mark Challan as CONFIRMED with timestamp
+      // 3. Mark Challan as CONFIRMED with timestamp and confirmedById
       const confirmedChallan = await tx.challan.update({
         where: { id },
         data: {
           status: ChallanStatus.CONFIRMED,
           confirmedAt: new Date(),
+          confirmedById: userId,
         },
         include: {
           customer: true,
@@ -327,11 +338,12 @@ export class ChallansService {
             },
           },
           createdBy: { select: { id: true, name: true, email: true } },
+          confirmedBy: { select: { id: true, name: true, email: true } },
         },
       });
 
       this.logger.log(
-        `Successfully confirmed Challan ${confirmedChallan.challanNo} (${stockMovementsCreated.length} items deducted atomically)`,
+        `Successfully confirmed Challan ${confirmedChallan.challanNo} by user ${userId} (${stockMovementsCreated.length} items deducted atomically)`,
       );
 
       return {
@@ -371,6 +383,8 @@ export class ChallansService {
       include: {
         customer: true,
         items: true,
+        createdBy: { select: { id: true, name: true, email: true } },
+        confirmedBy: { select: { id: true, name: true, email: true } },
       },
     });
 

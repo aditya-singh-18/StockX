@@ -86,7 +86,7 @@ export function CustomerNotesTimeline({ customerId, initialNotes }: CustomerNote
               <div className="flex items-center justify-between text-[11px] text-gray-400">
                 <span className="flex items-center gap-1 font-medium text-gray-300">
                   <User className="w-3 h-3 text-brand-400" />
-                  <span>{noteItem.user?.name || 'Authorized Staff'}</span>
+                  <span>{noteItem.createdBy?.name || noteItem.user?.name || 'Staff Member'}</span>
                 </span>
                 <span className="flex items-center gap-1 font-mono text-gray-500">
                   <Clock className="w-3 h-3" />

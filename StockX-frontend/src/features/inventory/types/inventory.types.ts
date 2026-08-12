@@ -31,14 +31,14 @@ export interface CreateProductDto {
   sku: string;
   category?: string;
   unitPrice: number;
-  currentStock?: number;
   minStock?: number;
   location?: string;
+  initialStock?: number;
 }
 
 export interface AdjustStockDto {
   quantity: number;
   type: 'IN' | 'OUT';
-  reason: 'PURCHASE' | 'DAMAGE' | 'AUDIT_CORRECTION' | 'RETURN' | 'OTHER';
-  notes?: string;
+  source?: 'MANUAL_ADJUSTMENT' | 'PURCHASE_RECEIVED' | 'DAMAGED' | 'RETURNED' | 'CHALLAN_CONFIRMED' | 'CHALLAN_CANCELLED_REVERSAL';
+  note?: string;
 }

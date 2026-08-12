@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { adjustStock } from '../services/inventory.service';
-import { Product, AdjustStockDto } from '../types/inventory.types';
+import { Product } from '../types/inventory.types';
 import { useToast } from '@/components/ui/Toast';
 import { Loader2 } from 'lucide-react';
 
@@ -23,11 +23,16 @@ export function AdjustStockModal({
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState<AdjustStockDto>({
+  const [formData, setFormData] = useState<{
+    quantity: number;
+    type: 'IN' | 'OUT';
+    source: 'MANUAL_ADJUSTMENT' | 'PURCHASE_RECEIVED' | 'DAMAGED' | 'RETURNED';
+    note: string;
+  }>({
     quantity: 1,
     type: 'IN',
-    reason: 'PURCHASE',
-    notes: '',
+    source: 'PURCHASE_RECEIVED',
+    note: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,8 +46,10 @@ export function AdjustStockModal({
 
     setLoading(true);
     const { error } = await adjustStock(product.id, {
-      ...formData,
       quantity: Number(formData.quantity),
+      type: formData.type,
+      source: formData.source,
+      note: formData.note ? formData.note.trim() : undefined,
     });
     setLoading(false);
 
@@ -55,8 +62,8 @@ export function AdjustStockModal({
       setFormData({
         quantity: 1,
         type: 'IN',
-        reason: 'PURCHASE',
-        notes: '',
+        source: 'PURCHASE_RECEIVED',
+        note: '',
       });
     }
   };
@@ -96,26 +103,25 @@ export function AdjustStockModal({
         </div>
 
         <div>
-          <label className="block text-gray-300 font-medium mb-1">Reason Code</label>
+          <label className="block text-gray-300 font-medium mb-1">Operational Source / Reason</label>
           <select
-            value={formData.reason}
-            onChange={(e) => setFormData({ ...formData, reason: e.target.value as any })}
+            value={formData.source}
+            onChange={(e) => setFormData({ ...formData, source: e.target.value as any })}
             className="w-full px-3 py-2 bg-[#1C1C20] border border-[#27272A] rounded-lg text-white focus:border-brand-500 focus:outline-none"
           >
-            <option value="PURCHASE">PURCHASE (Stock Received)</option>
-            <option value="DAMAGE">DAMAGE (Damaged / Expired)</option>
-            <option value="AUDIT_CORRECTION">AUDIT_CORRECTION (Physical Stock Count)</option>
-            <option value="RETURN">RETURN (Customer Return)</option>
-            <option value="OTHER">OTHER</option>
+            <option value="PURCHASE_RECEIVED">PURCHASE_RECEIVED (Stock Received from Vendor)</option>
+            <option value="DAMAGED">DAMAGED (Damaged / Expired Goods)</option>
+            <option value="MANUAL_ADJUSTMENT">MANUAL_ADJUSTMENT (Audit Physical Count Correction)</option>
+            <option value="RETURNED">RETURNED (Customer Return)</option>
           </select>
         </div>
 
         <div>
-          <label className="block text-gray-300 font-medium mb-1">Notes / Remarks</label>
+          <label className="block text-gray-300 font-medium mb-1">Notes / Audit Remarks</label>
           <textarea
             rows={2}
-            value={formData.notes || ''}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            value={formData.note}
+            onChange={(e) => setFormData({ ...formData, note: e.target.value })}
             placeholder="Audit notes or PO reference..."
             className="w-full px-3 py-2 bg-[#1C1C20] border border-[#27272A] rounded-lg text-white placeholder:text-gray-500 focus:border-brand-500 focus:outline-none resize-none"
           />

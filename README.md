@@ -1,122 +1,377 @@
-Here's a full breakdown of what you're being asked to build and how to approach it strategically given the 48-hour deadline.
+# StockX — Mini ERP + CRM Operations Portal
+### Fundsroom Full Stack Developer Case Study Submission
 
-What this actually is
+---
 
-A Mini ERP + CRM web app for a wholesale/distribution business, with 4 main data flows: Customers → Products/Stock → Sales Challans → (stock gets reduced). It's testing whether you can design a real database, build secure REST APIs, connect a React frontend, and ship something deployed — not whether you build every possible feature.
+## 📁 Submission Package Contents
 
-Core Modules to Build
+```text
+StockX - Fundsroom Case Study Submission/
+├── StockX_Screen_Recording.mp4          # Video walkthrough demonstrating all 4 roles & core data flows
+├── StockX_Postman_Collection.json        # Complete Postman collection with live environment & sample requests
+├── README.md                            # Complete technical documentation & setup guide (this file)
+└── Architecture_Diagram.png             # (Optional) High-resolution architectural diagram
+```
 
-1. Auth & Roles
+---
 
-JWT login, 4 roles: Admin, Sales, Warehouse, Accounts
-Middleware that restricts routes by role (e.g., only Sales can create challans, only Warehouse can adjust stock)
+## 🌐 Live Application & API Links
 
-2. Customer CRM
+| Service | URL | Description |
+| :--- | :--- | :--- |
+| **Frontend Portal** | [https://stockx-seven.vercel.app/](https://stockx-seven.vercel.app/) | Next.js 15 Responsive Operations Portal |
+| **Backend REST API** | [https://stockx-7dz7.onrender.com](https://stockx-7dz7.onrender.com) | NestJS Modular Monolith API |
+| **Interactive API Docs** | [https://stockx-7dz7.onrender.com/api/docs](https://stockx-7dz7.onrender.com/api/docs) | OpenAPI / Swagger 3.0 Documentation |
+| **GitHub Repository** | [https://github.com/aditya-singh-18/StockX](https://github.com/aditya-singh-18/StockX) | Monorepo containing Backend & Frontend |
 
-CRUD for customers (name, mobile, email, business name, GST optional, type: Retail/Wholesale/Distributor, address, status: Lead/Active/Inactive, follow-up date, notes)
-Search + detail page + add follow-up notes (notes should probably be a separate table linked to customer, so you can show a timeline)
+---
 
-3. Product & Inventory
+## 👥 Seed Test Credentials
 
-CRUD for products (name, SKU, category, unit price, current stock, min stock alert, location)
-A separate stock_movements table (product, qty, IN/OUT, reason, created_by, timestamp) — this is your audit log, don't just update a stock number blindly
+All accounts are pre-seeded with password: `Test@1234`
 
-4. Sales Challan
+| Role | Email | Password | Primary Permissions & Responsibilities |
+| :--- | :--- | :--- | :--- |
+| 👑 **Admin** | `admin@test.com` | `Test@1234` | Full superuser access (all 12 system permissions + user management) |
+| 💼 **Sales** | `sales@test.com` | `Test@1234` | Customer CRM, Follow-up notes, Create/Confirm/Cancel Sales Challans |
+| 🏭 **Warehouse** | `warehouse@test.com` | `Test@1234` | Product catalog, Location tracking, Stock IN/OUT adjustments & audits |
+| 📊 **Accounts** | `accounts@test.com` | `Test@1234` | Read-only analytics & reporting across Customers, Catalog, and Challans |
 
-Select customer, add multiple products + quantities, auto-generate challan number
-Draft vs Confirmed status
-Key logic: confirming a challan should reduce stock atomically, reject if stock insufficient, and store a snapshot of product data (name/price at time of sale) in the challan_items table — not just a foreign key, since product price/name can change later
-Suggested DB Schema (core tables)
-users (id, name, email, password_hash, role)
-customers (id, name, mobile, email, business_name, gst, type, address, status, follow_up_date)
-customer_notes (id, customer_id, note, created_by, created_at)
-products (id, name, sku, category, unit_price, current_stock, min_stock, location)
-stock_movements (id, product_id, qty, type, reason, created_by, created_at)
-challans (id, challan_no, customer_id, status, total_qty, created_by, created_at)
-challan_items (id, challan_id, product_id, product_name_snapshot, unit_price_snapshot, qty)
-Priority order (given 48 hrs — don't build breadth-first, build depth-first)
-DB schema + Express/NestJS setup + JWT auth (few hours)
-Customer CRUD + search
-Product CRUD + stock movement log
-Challan creation with the stock-deduction business logic (this is the part evaluators will scrutinize most — it's the only place with real business rules)
-Frontend: login → dashboard → customers → products → challans (basic but clean, doesn't need to be fancy)
-Deploy (Vercel + Render/Railway + Neon/Supabase Postgres — all free)
-README, Postman collection, screen recording
-What will actually make you stand out
-The stock-negative-prevention logic done correctly (use a DB transaction: check stock, deduct, insert movement log, all atomic) — this is the single most-tested piece of business logic in the whole assignment
-Proper input validation (e.g., zod or class-validator) and consistent error responses, not just try/catch dumps
-Pagination + search actually implemented, not stubbed
-A clean README that documents assumptions — evaluators often read this before the code
-Doing the mandatory screen recording professionally — walk through login as each role, then the full customer → product → challan → stock-reduction flow
-Realistic cuts if you're short on time
-Skip AWS (explicitly marked optional/bonus) — use Vercel/Render/Neon instead
-Skip Docker/GitHub Actions/PDF export/S3 upload — bonus only
-Frontend can be functional Bootstrap/Tailwind admin UI, doesn't need custom design work
+---
 
-Want me to help you scaffold the actual project — e.g., write the Prisma/DB schema, set up the Express + TypeScript boilerplate with JWT auth, or design the challan confirmation transaction logic first?
+## 🛠️ Technology Stack
 
-PDF
+```mermaid
+graph TD
+    Client["🖥️ Next.js 15 Frontend\n(TypeScript, Tailwind CSS, App Router)"]
+    API["⚙️ NestJS Backend API\n(TypeScript, Modular Monolith, JWT Auth)"]
+    DB[("🐘 PostgreSQL Database\n(Prisma ORM, Supabase / Neon)")]
 
-ab iske basis pe schema ready karo orr mai gemini se write karvau tum prompting kar doge ?? kya sahi rhega you work as a planner and architecture engineering and coding parts will be cover by the agy ? how it will be foir the rapid development and testing and other work will be handle by me ?? whats your proposal?
+    Client -->|REST API / HTTPS| API
+    API -->|Prisma Client / Transactions| DB
+```
 
-Architected schema design aur prompt engineering strategy tayyar kiya
-Architected schema design aur prompt engineering strategy tayyar kiya
+### Backend
+- **Framework**: [NestJS](https://nestjs.com/) (Node.js / TypeScript) — Modular architecture with strict dependency injection.
+- **Database ORM**: [Prisma ORM](https://www.prisma.io/) with PostgreSQL 16 (hosted on Supabase / Neon).
+- **Authentication**: JWT access tokens (15m expiry) + 40-byte cryptographically secure opaque refresh tokens (7d expiry, SHA-256 hashed in database) with single-use rotation & session revocation tracking.
+- **Authorization**: Dynamic permission-based RBAC (`@RequirePermissions()` decorator + `PermissionsGuard`).
+- **Validation**: `class-validator` and `class-transformer` with global `ValidationPipe` (whitelist + transform).
+- **API Documentation**: [Swagger / OpenAPI 3.0](https://swagger.io/) at `/api/docs`.
 
-Ye workflow solid hai — actually ye exactly wahi pattern hai jo real senior engineers use karte hain jab wo AI-assisted development karte hain: architecture decisions + schema + prompts tum aur main design karte hain, execution/typing Gemini karta hai, testing/verification tum karte ho. Isse tumhe speed milegi 48-hour deadline mein without losing control over design quality — jo evaluator asal mein judge karega.
+### Frontend
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router, Server Components + Client Components).
+- **Language & Styling**: TypeScript + Vanilla Tailwind CSS (custom dark theme, strictly adhering to high-contrast ergonomic UX).
+- **State & Routing**: URL search parameter synchronization for pagination, filters, and tab state deep-linking.
+- **Icons & UI**: [Lucide React](https://lucide.dev/), headless modals, and accessible interactive controls.
 
-Mera proposal:
+### Infrastructure & Deployment
+- **Frontend Hosting**: [Vercel](https://vercel.com/) (Edge-cached Next.js deployment).
+- **Backend Hosting**: [Render](https://render.com/) (Docker / Node.js web service).
+- **Database**: [Supabase / Neon](https://supabase.com/) (Managed PostgreSQL with connection pooling).
+- **Containerization**: Docker & Docker Compose for local zero-dependency database provisioning.
 
-Role Split
-Main (Planner/Architect): DB schema, module structure, API contract, business logic design (transaction logic, permission system), prompt-writing for har module
-Gemini (Coding Agent): Actual NestJS/Next.js code likhna, given precise prompts + schema
-Tum (Owner/QA): Prompts ko Gemini mein paste karna, code review, Postman se test karna, bugs Gemini ko wapas bhejna, deployment, recording, README
+---
 
-Ye division tumhe fast execution + full understanding dono degi — jab evaluator poochega "explain this transaction logic" tumhe pata hoga kyunki design tumhara/hamara socha hua hai, sirf blind copy-paste nahi.
+## 🏗️ Architecture Overview
 
-Ab schema ready karta hoon — poora Prisma schema, permission-based RBAC ke saath jo humne discuss kiya tha.
+StockX is structured as a **3-tier modular system** designed to solve the operational hurdles of wholesale and distribution businesses: managing customer relationships, tracking inventory across warehouse bins, and atomically fulfilling multi-item sales delivery challans without race conditions or stock overdrafts.
 
-Created 2 files, edited a memory, read a file
-Created 2 files, edited a memory, read a file
+### 1. Layered Architecture & Request Lifecycle
+1. **Presentation Layer (Next.js 15)**: Utilizes Server Components for data fetching and secure cookie transmission, combined with Client Components for dynamic search debouncing, pagination controls, stock adjustment modals, and confirmation dialogs.
+2. **API & Business Logic Layer (NestJS)**: Structured into domain modules (`Auth`, `Users`, `Roles`, `Customers`, `Products`, `Challans`). Incoming requests pass through `JwtAuthGuard` and `PermissionsGuard`, where user permissions are dynamically evaluated against required granular permission keys.
+3. **Persistence & Data Integrity Layer (PostgreSQL + Prisma)**: Enforces relational constraints, cascade rules, unique indexes (SKUs, Challan numbers, Emails), and ACID transaction boundaries.
 
-Do cheezein bana di hain:
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 💼 Sales Executive
+    participant FE as 🖥️ Next.js Frontend
+    participant BE as ⚙️ NestJS Backend
+    participant DB as 🐘 PostgreSQL (Prisma)
 
-schema.prisma — poora DB schema, permission-based RBAC (Role, Permission, RolePermission tables) ke saath, aur customer/product/challan ka poora structure jo humne discuss kiya — snapshot fields (challan items mein), stock movements audit table, sab included.
+    User->>FE: Click "Confirm & Dispatch" on Challan
+    FE->>BE: POST /challans/:id/confirm (Bearer JWT)
+    Note over BE: PermissionsGuard checks 'challan:confirm'
+    BE->>DB: Begin $transaction
+    loop For each Challan Line Item
+        BE->>DB: UPDATE products SET currentStock = currentStock - qty WHERE id = item.id AND currentStock >= qty
+        alt Insufficient Stock (count == 0)
+            DB-->>BE: 0 rows affected
+            BE-->>DB: ROLLBACK Transaction
+            BE-->>FE: 409 Conflict (Insufficient Stock Error)
+            FE-->>User: Show Toast "Insufficient Stock: Rollback complete"
+        else Sufficient Stock (count == 1)
+            BE->>DB: INSERT INTO stock_movements (OUT, qty, balanceAfter, challanId)
+        end
+    end
+    BE->>DB: UPDATE challans SET status = 'CONFIRMED', confirmedById = userId, confirmedAt = NOW()
+    DB-->>BE: COMMIT Transaction
+    BE-->>FE: 200 OK (Confirmed Challan & Movements)
+    FE-->>User: Show Success & Update Stock Badges
+```
 
-BUILD_PLAN.md — step-by-step Gemini prompts, order mein (Setup → Prisma → Auth → Customers → Products → Challans → Frontend). Har prompt copy-paste ready hai, and har step ke baad ek checklist hai jo tumhe batayega kya test karna hai before agla prompt dena.
+### 2. Atomic Stock Deduction & Concurrency Safety
+The most critical requirement in inventory fulfillment is preventing negative stock balances and double-allocation under high concurrency:
+- When confirming a challan, StockX executes an interactive Prisma `$transaction`.
+- Instead of reading stock in memory and writing it back (which is vulnerable to race conditions), StockX executes a **database-level conditional decrement**:
+  ```sql
+  UPDATE "products"
+  SET "currentStock" = "currentStock" - :quantity
+  WHERE "id" = :productId AND "currentStock" >= :quantity;
+  ```
+- If any line item in the order has insufficient stock, `updateMany` returns `count: 0`. The backend aborts immediately, throwing a `409 ConflictException`, and PostgreSQL rolls back all previous item deductions. No partial fulfillment or negative inventory can ever occur.
+- For each deducted item, an immutable `StockMovement` audit record is created capturing `quantity`, `type: OUT`, `source: CHALLAN_CONFIRMED`, `balanceAfter`, and `createdById`.
 
-Kaise use karo:
+### 3. Historical Price & Name Snapshot Pattern
+When a sales challan is created, prices and product descriptions must remain legally and financially binding even if catalog prices change in the future:
+- `ChallanItem` stores `unitPriceSnapshot` and `productNameSnapshot` alongside the `productId`.
+- Subsequent edits to product names, categories, or catalog prices do not alter historical challan invoices or dispatch totals.
 
-Ek prompt Gemini mein do, code milega
-Apne repo mein daalo, locally run karo, Postman se test karo
-Tabhi next prompt do — sequentially, skip mat karo (har step next pe depend karta hai)
-Step 5 (challan confirm) sabse critical hai — usme main ne explicitly bola hai Gemini ko transaction logic detail mein explain karne ke liye, taaki tumhe khud samajh aaye jab evaluator poochhe
+---
 
-Ek cheez important: Gemini jo bhi de, blindly paste mat karo — khaaskar Step 5 ka $transaction block khud padh ke samajh lena, kyunki interview mein yehi sabse zyada poocha jayega.
+## 🔐 RBAC Design & Capability Matrix
 
-Agla step chaho toh main README template bhi bana doon (architecture explanation + assumptions section), taaki wo bhi ready rahe jab tak backend ban raha hai?
+StockX implements a **pure Permission-Based Access Control** model rather than checking hardcoded role strings in application code.
 
-Schema
-PRISMA 
-Build plan
-Document · MD 
+### Database Tables:
+- `Role`: Defines job titles (`Admin`, `Sales`, `Warehouse`, `Accounts`).
+- `Permission`: Defines granular capability keys (e.g. `customer:create`, `challan:confirm`, `product:stock-adjust`).
+- `RolePermission`: Many-to-many junction table mapping roles to permissions.
 
-okay app ka kya name de ham ?
+### Permission Matrix:
 
-Kuch options — sab short, professional, aur "ERP+CRM for distribution" vibe wale:
+| Permission Key | Description | Admin | Sales | Warehouse | Accounts |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| `customer:create` | Register new customer accounts | ✅ | ✅ | ❌ | ❌ |
+| `customer:read` | View customer CRM list and profile details | ✅ | ✅ | ❌ | ✅ |
+| `customer:update` | Edit customer details and add follow-up notes | ✅ | ✅ | ❌ | ❌ |
+| `product:create` | Create new SKU items in the catalog | ✅ | ❌ | ❌ | ❌ |
+| `product:read` | View catalog, prices, and stock balances | ✅ | ✅ | ✅ | ✅ |
+| `product:update` | Edit product metadata (name, price, min stock) | ✅ | ❌ | ✅ | ❌ |
+| `product:stock-adjust`| Perform manual inward/outward stock adjustments | ✅ | ❌ | ✅ | ❌ |
+| `challan:create` | Create draft sales delivery challans | ✅ | ✅ | ❌ | ❌ |
+| `challan:read` | View sales delivery challans and order snapshots | ✅ | ✅ | ✅ | ✅ |
+| `challan:confirm` | Atomically confirm and dispatch delivery challans | ✅ | ✅ | ❌ | ❌ |
+| `challan:cancel` | Cancel unconfirmed draft challans | ✅ | ✅ | ❌ | ❌ |
+| `user:manage` | Manage user accounts and role assignments | ✅ | ❌ | ❌ | ❌ |
 
-Straightforward/professional:
+---
 
-StockFlow — inventory + challan flow dono capture karta hai
-TradeDesk — wholesale/distribution business ke liye fits
-DistroOps — "Distribution Operations" — case study ke business context se directly match karta hai
-LedgerLine
+## 🔄 Core Business Data Flows
 
-Thoda branded feel:
+```mermaid
+flowchart LR
+    subgraph CRM ["1. Customer CRM"]
+        C1[Create Customer / Lead] --> C2[Log Follow-up Notes Timeline]
+    end
 
-Vyapar360 (Vyapar = business in Hindi, 360 = full coverage) — Hinglish naam evaluator ko memorable bhi lagega aur business-context bhi dikhayega
-Chalaan ya ChalanHub — seedha core module (Sales Challan) se naam liya, distinctive bhi hai
-StockSetu (Setu = bridge — customer, stock, sales ko jodta hai)
+    subgraph Inventory ["2. Product & Inventory"]
+        P1[Create Product SKU] --> P2[Initial Stock / Inward Adjustment]
+        P2 --> P3[Real-time Stock Balance & Low-Stock Alerts]
+    end
 
-Meri pick: agar tum evaluator ko "ye business domain samajhta hai" dikhana chahte ho, "Vyapar360" ya "DistroOps" better hai. Agar generic-professional dikhana hai (jaise ek real SaaS product), "StockFlow" ya "TradeDesk" better lagega — GitHub repo name, README title, aur login page pe bhi clean dikhega.
+    subgraph Challans ["3. Sales Fulfillment"]
+        S1[Select Customer] --> S2[Add Multi-Product Items & Quantities]
+        S2 --> S3[Generate Draft Challan CH-2026-XXXXX]
+        S3 --> S4{Confirm Challan?}
+        S4 -- "Sufficient Stock" --> S5[Atomic Stock Deduction + Audit Log]
+        S4 -- "Insufficient Stock" --> S6[Transaction Rollback + 409 Alert]
+    end
 
-Koi ek pasand aaya, ya inme se milake kuch banana hai?
+    CRM --> Challans
+    Inventory --> Challans
+```
+
+---
+
+## 💻 Local Setup & Execution Guide
+
+### Prerequisites
+- **Node.js**: `v18.0.0` or higher (Node 20+ recommended)
+- **npm**: `v9.0.0` or higher
+- **PostgreSQL**: Local PostgreSQL 14+ instance OR Docker Desktop
+
+---
+
+### Step 1: Clone Repository
+```bash
+git clone https://github.com/aditya-singh-18/StockX.git
+cd StockX
+```
+
+---
+
+### Step 2: Backend Setup
+```bash
+cd StockX-backend
+
+# Install dependencies
+npm install
+
+# Configure environment variables
+cp .env.example .env
+```
+
+Ensure your `StockX-backend/.env` file contains:
+```env
+PORT=3001
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/stockflow_db?schema=public"
+JWT_SECRET="stockflow_super_secret_jwt_access_key_2026"
+CORS_ORIGIN="http://localhost:3000"
+```
+
+Run database migrations and seed default permissions, users, and catalog data:
+```bash
+# Run Prisma migrations
+npx prisma migrate dev --name init
+
+# Seed database (Roles, Permissions, 4 Users, Demo Products & Customers)
+npm run prisma:seed
+
+# Start NestJS backend in development mode
+npm run start:dev
+```
+*The backend will be running at [http://localhost:3001](http://localhost:3001) with Swagger documentation at [http://localhost:3001/api/docs](http://localhost:3001/api/docs).*
+
+---
+
+### Step 3: Frontend Setup
+Open a new terminal window:
+```bash
+cd StockX-frontend
+
+# Install dependencies
+npm install
+
+# Configure environment variables
+cp .env.example .env.local
+```
+
+Ensure your `StockX-frontend/.env.local` contains:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+Start the Next.js development server:
+```bash
+npm run dev
+```
+*The frontend portal will be accessible at [http://localhost:3000](http://localhost:3000).*
+
+---
+
+## 🔑 Environment Variables Reference
+
+### Backend (`StockX-backend/.env`)
+| Variable | Required | Example Value | Description |
+| :--- | :---: | :--- | :--- |
+| `PORT` | No | `3001` | HTTP port for the NestJS server |
+| `DATABASE_URL` | **Yes** | `postgresql://user:pass@host:5432/db` | PostgreSQL connection string |
+| `JWT_SECRET` | **Yes** | `your_access_token_secret` | Secret key used to sign access JWTs (15 min) |
+| `CORS_ORIGIN` | No | `http://localhost:3000` | Allowed CORS origin for frontend requests |
+
+### Frontend (`StockX-frontend/.env.local`)
+| Variable | Required | Example Value | Description |
+| :--- | :---: | :--- | :--- |
+| `NEXT_PUBLIC_API_URL` | **Yes** | `http://localhost:3001` | Base URL of the backend REST API |
+
+---
+
+## 🚀 Cloud Deployment Architecture
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                       CLOUDFLARE / DNS                      │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │                              │
+               ▼                              ▼
+┌─────────────────────────────┐  ┌────────────────────────────┐
+│      VERCEL EDGE NETWORK    │  │       RENDER WEB SERVICE   │
+│   Next.js 15 App Router     │  │   NestJS Modular API Engine│
+│   (SSR + Static Assets)     │  │   (Docker Container)       │
+└──────────────┬──────────────┘  └────────────┬───────────────┘
+               │                              │
+               │ HTTP / JSON API              │ Prisma Connection
+               └──────────────────────────────┼───────────────┐
+                                              ▼               ▼
+                                 ┌────────────────────────────┐
+                                 │   SUPABASE / NEON POSTGRES │
+                                 │    PostgreSQL 16 Engine    │
+                                 │    (ACID Transactions)     │
+                                 └────────────────────────────┘
+```
+
+1. **Backend on Render**:
+   - Packaged and deployed via Docker / Node build environment.
+   - Database migrations are automatically executed prior to boot using `npx prisma migrate deploy`.
+2. **Frontend on Vercel**:
+   - Zero-config Next.js 15 deployment with server-side proxy route handlers protecting token transport.
+3. **Database on Supabase / Neon**:
+   - High-performance managed PostgreSQL with connection pooling and automated SSL enforcement.
+
+---
+
+## 📡 REST API Specification
+
+### Authentication (`/auth`)
+| Method | Endpoint | Permission | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/auth/login` | Public | Authenticate with email/password; returns JWT + Opaque refresh token |
+| `POST` | `/auth/refresh` | Public | Single-use refresh token rotation issuing fresh token pair |
+| `POST` | `/auth/logout` | Authenticated | Revoke active refresh token session |
+| `POST` | `/auth/logout-all` | Authenticated | Revoke all active sessions for current user |
+| `GET` | `/auth/me` | Authenticated | Return profile, role, and dynamic permission capabilities |
+
+### Customer CRM (`/customers`)
+| Method | Endpoint | Permission | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/customers` | `customer:create` | Register new customer profile (Retail/Wholesale/Distributor) |
+| `GET` | `/customers` | `customer:read` | Paginated customer list with multi-field search and status filters |
+| `GET` | `/customers/:id` | `customer:read` | Detailed profile with notes timeline and linked sales challans |
+| `PATCH` | `/customers/:id` | `customer:update` | Update customer contact, address, or follow-up date |
+| `POST` | `/customers/:id/notes` | `customer:update` | Add follow-up timeline note linked to authenticated staff |
+| `DELETE`| `/customers/:id` | `user:manage` | Delete customer (guarded against customers with linked challans) |
+
+### Products & Inventory (`/products`)
+| Method | Endpoint | Permission | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/products` | `product:create` | Create catalog SKU item (initial stock starts at 0) |
+| `GET` | `/products` | `product:read` | Paginated product list with search, category, & lowStock filters |
+| `GET` | `/products/:id` | `product:read` | Product details with recent stock movements & computed lowStock alert |
+| `PATCH` | `/products/:id` | `product:update` | Update product metadata (price, SKU, location, minStock) |
+| `POST` | `/products/:id/stock-movements` | `product:stock-adjust` | Manual IN/OUT stock adjustment with atomic balance update |
+| `GET` | `/products/:id/stock-movements` | `product:read` | Paginated stock audit history with movement reasons and authors |
+
+### Sales Challans (`/challans`)
+| Method | Endpoint | Permission | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/challans` | `challan:create` | Create multi-product draft challan with frozen price/name snapshots |
+| `GET` | `/challans` | `challan:read` | Paginated delivery challans with customer and status filters |
+| `GET` | `/challans/:id` | `challan:read` | Full challan breakdown with line items and confirmer attribution |
+| `POST` | `/challans/:id/confirm` | `challan:confirm` | **Atomic Dispatch**: Checks stock, deducts inventory, creates audit logs |
+| `POST` | `/challans/:id/cancel` | `challan:cancel` | Cancel unconfirmed draft challan (locked if already confirmed) |
+
+---
+
+## 📌 Known Limitations, Assumptions & Future Roadmap
+
+1. **Scope Boundary**:
+   - Purchase Orders (PO), Vendor Management, Invoicing, and GST Tax Invoices were identified in the background domain context but are excluded from this release to focus strictly on the **Core Modules Required** (CRM, Inventory, and Sales Delivery Challan fulfillment).
+2. **One-Way Challan Confirmation**:
+   - Once a sales challan is in `CONFIRMED` status, it is locked against cancellation to preserve audit integrity. An enterprise *Sales Return & Stock Restocking Workflow* is architected as the next iteration.
+3. **Multi-Warehouse Topology**:
+   - In the current schema, physical location is modeled as a descriptive field (`location: string`) on the product. Future scaling will extract this into discrete `Warehouse` and `WarehouseStock` relational entities for multi-facility transfer tracking.
+4. **Cloud Infrastructure Selection**:
+   - In accordance with the assignment specifications, AWS deployment was marked as optional/bonus. Free-tier cloud hosting (**Vercel** + **Render** + **Supabase / Neon**) was chosen to demonstrate complete deployment without incurring recurring infrastructure costs.
+
+---
+
+## 👨‍💻 Submission & Verification Checklist
+
+- [x] **Backend API**: NestJS + PostgreSQL + Prisma + JWT Refresh Token Rotation.
+- [x] **Frontend UI**: Next.js 15 Responsive Dark Theme Portal with deep-linkable pagination & filters.
+- [x] **RBAC Matrix**: 4 Distinct Roles with 12 Granular Permission Gates.
+- [x] **Atomic Transaction**: DB-level conditional decrement preventing stock overdrafts under concurrency.
+- [x] **Audit Trail**: Every inventory modification logs movement type, source, and author.
+- [x] **Artifacts**: Postman collection export, Swagger OpenAPI documentation, and screen recording walkthrough.

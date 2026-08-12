@@ -182,7 +182,7 @@ export function ProductDetailCard({ initialProduct, initialHistory }: ProductDet
                   <div className="text-right text-[11px] text-gray-400 space-y-0.5">
                     <div className="flex items-center justify-end gap-1 text-gray-300 font-medium">
                       <User className="w-3 h-3 text-brand-400" />
-                      <span>{mov.user?.name || 'System Operator'}</span>
+                      <span>{mov.createdBy?.name || mov.user?.name || 'Warehouse Staff'}</span>
                     </div>
                     <div className="flex items-center justify-end gap-1 text-gray-500 font-mono">
                       <Clock className="w-3 h-3" />

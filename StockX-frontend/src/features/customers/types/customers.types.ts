@@ -46,6 +46,11 @@ export interface CustomerNote {
   id: string;
   note: string;
   createdAt: string;
+  createdBy?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   user?: {
     id: string;
     name: string;

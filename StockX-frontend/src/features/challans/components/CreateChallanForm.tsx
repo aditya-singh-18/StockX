@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Customer } from '@/features/customers/types/customers.types';
 import { Product } from '@/features/inventory/types/inventory.types';
 import { createChallan } from '../services/challans.service';
-import { CreateChallanItemDto } from '../types/challans.types';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { ScrollText, Plus, Trash2, ArrowLeft, Loader2, User, Package } from 'lucide-react';
@@ -15,6 +14,12 @@ interface CreateChallanFormProps {
   products: Product[];
 }
 
+interface ChallanRowItem {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
 export function CreateChallanForm({ customers, products }: CreateChallanFormProps) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -22,7 +27,7 @@ export function CreateChallanForm({ customers, products }: CreateChallanFormProp
 
   const [customerId, setCustomerId] = useState(customers[0]?.id || '');
   const [notes, setNotes] = useState('');
-  const [items, setItems] = useState<CreateChallanItemDto[]>([
+  const [items, setItems] = useState<ChallanRowItem[]>([
     { productId: products[0]?.id || '', quantity: 1, unitPrice: Number(products[0]?.unitPrice || 0) },
   ]);
 
@@ -81,10 +86,14 @@ export function CreateChallanForm({ customers, products }: CreateChallanFormProp
     }
 
     setLoading(true);
+    // Send only whitelisted DTO fields (productId, quantity) for each challan item
     const { data, error } = await createChallan({
       customerId,
-      notes: notes || undefined,
-      items,
+      notes: notes.trim() || undefined,
+      items: items.map((item) => ({
+        productId: item.productId,
+        quantity: Number(item.quantity),
+      })),
     });
     setLoading(false);
 

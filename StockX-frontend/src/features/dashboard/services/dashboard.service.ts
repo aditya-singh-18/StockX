@@ -1,4 +1,4 @@
-import { API_BASE_URL, apiFetch } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import { DashboardMetrics, DashboardRecentChallan } from '../types/dashboard.types';
 
 export async function getDashboardData(token?: string): Promise<{
@@ -6,13 +6,6 @@ export async function getDashboardData(token?: string): Promise<{
   recentChallans: DashboardRecentChallan[];
   errors: string[];
 }> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   const errors: string[] = [];
   let totalCustomers = 0;
   let totalProducts = 0;
@@ -23,44 +16,36 @@ export async function getDashboardData(token?: string): Promise<{
 
   try {
     const [custRes, prodRes, lowStockRes, chalRes] = await Promise.allSettled([
-      fetch(`${API_BASE_URL}/customers?limit=1`, { headers, cache: 'no-store' }).then((r) =>
-        r.ok ? r.json() : null,
-      ),
-      fetch(`${API_BASE_URL}/products?limit=1`, { headers, cache: 'no-store' }).then((r) =>
-        r.ok ? r.json() : null,
-      ),
-      fetch(`${API_BASE_URL}/products?lowStock=true&limit=1`, { headers, cache: 'no-store' }).then(
-        (r) => (r.ok ? r.json() : null),
-      ),
-      fetch(`${API_BASE_URL}/challans?limit=5`, { headers, cache: 'no-store' }).then((r) =>
-        r.ok ? r.json() : null,
-      ),
+      apiFetch<any>('/customers?limit=1', { cache: 'no-store' }, token),
+      apiFetch<any>('/products?limit=1', { cache: 'no-store' }, token),
+      apiFetch<any>('/products?lowStock=true&limit=1', { cache: 'no-store' }, token),
+      apiFetch<any>('/challans?limit=5', { cache: 'no-store' }, token),
     ]);
 
-    if (custRes.status === 'fulfilled' && custRes.value) {
-      totalCustomers = custRes.value.total ?? 0;
+    if (custRes.status === 'fulfilled' && custRes.value.data) {
+      totalCustomers = custRes.value.data.total ?? 0;
       backendOnline = true;
     } else {
       errors.push('customers');
     }
 
-    if (prodRes.status === 'fulfilled' && prodRes.value) {
-      totalProducts = prodRes.value.total ?? 0;
+    if (prodRes.status === 'fulfilled' && prodRes.value.data) {
+      totalProducts = prodRes.value.data.total ?? 0;
       backendOnline = true;
     } else {
       errors.push('products');
     }
 
-    if (lowStockRes.status === 'fulfilled' && lowStockRes.value) {
-      lowStockCount = lowStockRes.value.total ?? 0;
+    if (lowStockRes.status === 'fulfilled' && lowStockRes.value.data) {
+      lowStockCount = lowStockRes.value.data.total ?? 0;
       backendOnline = true;
     } else {
       errors.push('lowStock');
     }
 
-    if (chalRes.status === 'fulfilled' && chalRes.value) {
-      totalChallans = chalRes.value.total ?? 0;
-      recentChallans = chalRes.value.data ?? [];
+    if (chalRes.status === 'fulfilled' && chalRes.value.data) {
+      totalChallans = chalRes.value.data.total ?? 0;
+      recentChallans = chalRes.value.data.data ?? [];
       backendOnline = true;
     } else {
       errors.push('challans');

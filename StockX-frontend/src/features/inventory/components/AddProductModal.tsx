@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
-import { createProduct } from '../services/inventory.service';
-import { CreateProductDto } from '../types/inventory.types';
+import { createProduct, adjustStock } from '../services/inventory.service';
 import { useToast } from '@/components/ui/Toast';
 import { Loader2 } from 'lucide-react';
 
@@ -17,12 +16,12 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalP
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState<CreateProductDto>({
+  const [formData, setFormData] = useState({
     name: '',
     sku: '',
     category: '',
     unitPrice: 0,
-    currentStock: 0,
+    initialStock: 0,
     minStock: 10,
     location: '',
   });
@@ -35,30 +34,45 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalP
     }
 
     setLoading(true);
+    // Send only whitelisted fields for product creation
     const { data, error } = await createProduct({
-      ...formData,
+      name: formData.name.trim(),
+      sku: formData.sku.trim(),
+      category: formData.category ? formData.category.trim() : undefined,
       unitPrice: Number(formData.unitPrice),
-      currentStock: Number(formData.currentStock),
       minStock: Number(formData.minStock),
+      location: formData.location ? formData.location.trim() : undefined,
     });
-    setLoading(false);
 
-    if (error) {
-      showToast(error, 'error');
-    } else {
-      showToast(`Product "${data?.name}" created successfully!`, 'success');
-      onSuccess();
-      onClose();
-      setFormData({
-        name: '',
-        sku: '',
-        category: '',
-        unitPrice: 0,
-        currentStock: 0,
-        minStock: 10,
-        location: '',
+    if (error || !data) {
+      setLoading(false);
+      showToast(error || 'Failed to create product', 'error');
+      return;
+    }
+
+    // If initial stock was provided, perform initial stock movement
+    if (formData.initialStock > 0) {
+      await adjustStock(data.id, {
+        quantity: Number(formData.initialStock),
+        type: 'IN',
+        source: 'MANUAL_ADJUSTMENT',
+        note: 'Initial inventory stock on creation',
       });
     }
+
+    setLoading(false);
+    showToast(`Product "${data.name}" created successfully!`, 'success');
+    onSuccess();
+    onClose();
+    setFormData({
+      name: '',
+      sku: '',
+      category: '',
+      unitPrice: 0,
+      initialStock: 0,
+      minStock: 10,
+      location: '',
+    });
   };
 
   return (
@@ -99,7 +113,7 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalP
             <label className="block text-gray-300 font-medium mb-1">Category</label>
             <input
               type="text"
-              value={formData.category || ''}
+              value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               placeholder="e.g. Raw Materials"
               className="w-full px-3 py-2 bg-[#1C1C20] border border-[#27272A] rounded-lg text-white focus:border-brand-500 focus:outline-none"
@@ -124,8 +138,8 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalP
             <label className="block text-gray-300 font-medium mb-1">Initial Stock</label>
             <input
               type="number"
-              value={formData.currentStock}
-              onChange={(e) => setFormData({ ...formData, currentStock: parseInt(e.target.value) || 0 })}
+              value={formData.initialStock}
+              onChange={(e) => setFormData({ ...formData, initialStock: parseInt(e.target.value) || 0 })}
               className="w-full px-3 py-2 bg-[#1C1C20] border border-[#27272A] rounded-lg text-white font-mono focus:border-brand-500 focus:outline-none"
             />
           </div>
@@ -144,7 +158,7 @@ export function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalP
             <label className="block text-gray-300 font-medium mb-1">Warehouse Bin</label>
             <input
               type="text"
-              value={formData.location || ''}
+              value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               placeholder="e.g. A1-B3"
               className="w-full px-3 py-2 bg-[#1C1C20] border border-[#27272A] rounded-lg text-white font-mono focus:border-brand-500 focus:outline-none"

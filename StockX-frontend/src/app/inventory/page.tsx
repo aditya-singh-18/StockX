@@ -1,9 +1,9 @@
 import React from 'react';
-import { cookies } from 'next/headers';
 import PortalLayout from '@/components/layout/PortalLayout';
 import { getProducts } from '@/features/inventory/services/inventory.service';
 import { ProductListTable } from '@/features/inventory/components/ProductListTable';
 import { Package } from 'lucide-react';
+import { getServerAuth } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,20 +12,28 @@ interface PageProps {
     search?: string;
     category?: string;
     lowStock?: string;
+    page?: string;
+    limit?: string;
   }>;
 }
 
 export default async function InventoryRoute({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('stockflow_access_token')?.value;
+  const { accessToken } = await getServerAuth();
 
-  const { data: products, total } = await getProducts(
+  const page = resolvedSearchParams.page ? Math.max(1, parseInt(resolvedSearchParams.page, 10) || 1) : 1;
+  const limit = resolvedSearchParams.limit ? Math.max(1, parseInt(resolvedSearchParams.limit, 10) || 10) : 10;
+  const lowStock = resolvedSearchParams.lowStock === 'true' ? true : undefined;
+  const search = resolvedSearchParams.search?.trim() || undefined;
+  const category = resolvedSearchParams.category?.trim() || undefined;
+
+  const { data: products, total, totalPages } = await getProducts(
     {
-      limit: 50,
-      search: resolvedSearchParams.search,
-      category: resolvedSearchParams.category,
-      lowStock: resolvedSearchParams.lowStock === 'true',
+      page,
+      limit,
+      search,
+      category,
+      lowStock,
     },
     accessToken,
   );
@@ -43,7 +51,13 @@ export default async function InventoryRoute({ searchParams }: PageProps) {
           </p>
         </div>
 
-        <ProductListTable initialProducts={products} total={total} />
+        <ProductListTable
+          initialProducts={products}
+          total={total}
+          currentPage={page}
+          pageSize={limit}
+          totalPages={totalPages}
+        />
       </div>
     </PortalLayout>
   );
