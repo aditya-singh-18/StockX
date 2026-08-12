@@ -108,6 +108,9 @@ export class ChallansService {
 
       this.logger.log(`Created Draft Challan ${challan.challanNo} for customer ${customer.name} (Amount: ₹${totalAmountNumber})`);
       return challan;
+    }, {
+      maxWait: 10000,
+      timeout: 30000,
     });
   }
 
@@ -350,6 +353,9 @@ export class ChallansService {
         challan: confirmedChallan,
         stockMovements: stockMovementsCreated,
       };
+    }, {
+      maxWait: 10000,
+      timeout: 30000,
     });
   }
 
