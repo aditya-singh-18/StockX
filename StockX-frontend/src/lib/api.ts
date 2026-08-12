@@ -18,6 +18,14 @@ export interface ApiErrorResponse {
   path?: string;
 }
 
+function getClientToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(?:^|; )stockflow_token_client=([^;]*)'));
+  if (match && match[1]) return decodeURIComponent(match[1]);
+  const fallback = document.cookie.match(new RegExp('(?:^|; )stockflow_access_token=([^;]*)'));
+  return fallback && fallback[1] ? decodeURIComponent(fallback[1]) : null;
+}
+
 /**
  * Universal API fetch client with automatic error formatting & token support
  */
@@ -26,7 +34,16 @@ export async function apiFetch<T = any>(
   options: RequestInit = {},
   token?: string,
 ): Promise<{ data: T | null; error: string | null; status: number }> {
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  const activeToken = token || getClientToken();
+
+  let url: string;
+  if (endpoint.startsWith('http')) {
+    url = endpoint;
+  } else if (typeof window !== 'undefined' && !activeToken) {
+    url = `/api/proxy${endpoint}`;
+  } else {
+    url = `${API_BASE_URL}${endpoint}`;
+  }
 
   const headers = new Headers(options.headers || {});
   
@@ -34,8 +51,8 @@ export async function apiFetch<T = any>(
     headers.set('Content-Type', 'application/json');
   }
 
-  if (token && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${token}`);
+  if (activeToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${activeToken}`);
   }
 
   try {

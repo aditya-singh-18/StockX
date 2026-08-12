@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const isProduction = process.env.NODE_ENV === 'production';
     const response = NextResponse.json({ success: true, user });
 
-    // 1. Set Access Token Cookie (15 Minutes)
+    // 1. Set Access Token Cookie (15 Minutes) - HttpOnly
     response.cookies.set('stockflow_access_token', accessToken, {
       httpOnly: true,
       secure: isProduction,
@@ -48,7 +48,16 @@ export async function POST(req: NextRequest) {
       maxAge: 15 * 60, // 15 minutes
     });
 
-    // 2. Set Refresh Token Cookie (7 Days)
+    // 2. Set Client Accessible Token Cookie for Client API Calls
+    response.cookies.set('stockflow_token_client', accessToken, {
+      httpOnly: false,
+      secure: isProduction,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 15 * 60,
+    });
+
+    // 3. Set Refresh Token Cookie (7 Days)
     response.cookies.set('stockflow_refresh_token', refreshToken, {
       httpOnly: true,
       secure: isProduction,
@@ -57,7 +66,7 @@ export async function POST(req: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
-    // 3. Set User Profile (Readable by client components for UI state)
+    // 4. Set User Profile (Readable by client components for UI state)
     response.cookies.set('stockflow_user', JSON.stringify(user), {
       httpOnly: false,
       secure: isProduction,

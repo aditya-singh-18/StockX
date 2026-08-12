@@ -89,7 +89,7 @@ export async function adjustStock(
   token?: string,
 ): Promise<{ data: any; error: string | null }> {
   const result = await apiFetch(
-    `/products/${productId}/stock-adjust`,
+    `/products/${productId}/stock-movements`,
     {
       method: 'POST',
       body: JSON.stringify(dto),
@@ -104,6 +104,7 @@ export async function getProductStockHistory(
   productId: string,
   token?: string,
 ): Promise<{ data: StockMovement[]; error: string | null }> {
-  const result = await apiFetch<StockMovement[]>(`/products/${productId}/history`, {}, token);
-  return { data: result.data || [], error: result.error };
+  const result = await apiFetch<any>(`/products/${productId}/stock-movements`, {}, token);
+  const items = Array.isArray(result.data?.data) ? result.data.data : Array.isArray(result.data) ? result.data : [];
+  return { data: items, error: result.error };
 }
