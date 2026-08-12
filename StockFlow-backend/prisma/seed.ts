@@ -74,6 +74,8 @@ async function main() {
       'product:read',
       'challan:create',
       'challan:read',
+      'challan:confirm',
+      'challan:cancel',
     ],
     Warehouse: [
       'product:read',

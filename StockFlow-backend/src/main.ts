@@ -10,12 +10,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 3001);
-  const corsOrigin = configService.get<string>('CORS_ORIGIN', 'http://localhost:3000');
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : configService.get<number>('PORT', 3001);
+  const corsOrigin = process.env.CORS_ORIGIN || configService.get<string>('CORS_ORIGIN', '*');
 
   // Enable CORS
   app.enableCors({
-    origin: corsOrigin.includes(',') ? corsOrigin.split(',') : corsOrigin,
+    origin: corsOrigin === '*' ? true : (corsOrigin.includes(',') ? corsOrigin.split(',').map((s) => s.trim()) : corsOrigin),
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization',
@@ -67,8 +67,8 @@ async function bootstrap() {
     customSiteTitle: 'StockFlow API Docs',
   });
 
-  await app.listen(port);
-  logger.log(`🚀 StockFlow Backend running on: http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  logger.log(`🚀 StockFlow Backend running on: http://0.0.0.0:${port}`);
   logger.log(`📚 Swagger API Docs available at: http://localhost:${port}/api/docs`);
 }
 
