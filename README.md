@@ -216,8 +216,8 @@ cp .env.example .env
 Ensure your `StockX-backend/.env` file contains:
 ```env
 PORT=3001
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/stockflow_db?schema=public"
-JWT_SECRET="stockflow_super_secret_jwt_access_key_2026"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/stockX_db?schema=public"
+JWT_SECRET="stockX_super_secret_jwt_access_key_2026"
 CORS_ORIGIN="http://localhost:3000"
 ```
 

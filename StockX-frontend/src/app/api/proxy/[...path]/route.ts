@@ -8,9 +8,9 @@ async function handleProxy(req: NextRequest, { params }: { params: Promise<{ pat
   const targetUrl = `${API_BASE_URL}/${endpointPath}${searchParams}`;
 
   let accessToken =
-    req.cookies.get('stockflow_access_token')?.value ||
-    req.cookies.get('stockflow_token_client')?.value;
-  const refreshToken = req.cookies.get('stockflow_refresh_token')?.value;
+    req.cookies.get('stockx_access_token')?.value ||
+    req.cookies.get('stockx_token_client')?.value;
+  const refreshToken = req.cookies.get('stockx_refresh_token')?.value;
 
   let refreshedData: { accessToken: string; refreshToken?: string; user?: any } | null = null;
 
@@ -66,14 +66,14 @@ async function handleProxy(req: NextRequest, { params }: { params: Promise<{ pat
 
     if (refreshedData) {
       const isProduction = process.env.NODE_ENV === 'production';
-      proxyResponse.cookies.set('stockflow_access_token', refreshedData.accessToken, {
+      proxyResponse.cookies.set('stockx_access_token', refreshedData.accessToken, {
         httpOnly: true,
         secure: isProduction,
         sameSite: 'lax',
         path: '/',
         maxAge: 15 * 60,
       });
-      proxyResponse.cookies.set('stockflow_token_client', refreshedData.accessToken, {
+      proxyResponse.cookies.set('stockx_token_client', refreshedData.accessToken, {
         httpOnly: false,
         secure: isProduction,
         sameSite: 'lax',
@@ -81,7 +81,7 @@ async function handleProxy(req: NextRequest, { params }: { params: Promise<{ pat
         maxAge: 15 * 60,
       });
       if (refreshedData.refreshToken) {
-        proxyResponse.cookies.set('stockflow_refresh_token', refreshedData.refreshToken, {
+        proxyResponse.cookies.set('stockx_refresh_token', refreshedData.refreshToken, {
           httpOnly: true,
           secure: isProduction,
           sameSite: 'lax',

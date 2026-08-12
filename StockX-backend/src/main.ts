@@ -38,9 +38,9 @@ async function bootstrap() {
 
   // Swagger Documentation Setup
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('StockFlow ERP + CRM API')
+    .setTitle('StockX ERP + CRM API')
     .setDescription(
-      'REST API documentation for StockFlow: Mini ERP + CRM Operations Portal. Supports Auth, Customers CRM, Products/Inventory, and Sales Challans.',
+      'REST API documentation for StockX: Mini ERP + CRM Operations Portal. Supports Auth, Customers CRM, Products/Inventory, and Sales Challans.',
     )
     .setVersion('1.0')
     .addBearerAuth(
@@ -64,11 +64,11 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document, {
-    customSiteTitle: 'StockFlow API Docs',
+    customSiteTitle: 'StockX API Docs',
   });
 
   await app.listen(port, '0.0.0.0');
-  logger.log(`🚀 StockFlow Backend running on: http://0.0.0.0:${port}`);
+  logger.log(`🚀 StockX Backend running on: http://0.0.0.0:${port}`);
   logger.log(`📚 Swagger API Docs available at: http://localhost:${port}/api/docs`);
 }
 

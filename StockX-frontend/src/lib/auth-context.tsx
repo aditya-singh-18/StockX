@@ -34,7 +34,7 @@ export function AuthProvider({
       try {
         const match = document.cookie
           .split('; ')
-          .find((row) => row.startsWith('stockflow_user='));
+          .find((row) => row.startsWith('stockx_user='));
         if (match) {
           const cookieVal = decodeURIComponent(match.split('=')[1]);
           setUser(JSON.parse(cookieVal));

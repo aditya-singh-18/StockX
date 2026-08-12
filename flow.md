@@ -1,5 +1,5 @@
 ═════════════════════════════════════════════════════════════════════
-📖 STOCKFLOW APIS TESTING GUIDE & ENDPOINT REGISTRY
+📖 STOCKX APIS TESTING GUIDE & ENDPOINT REGISTRY
 ═════════════════════════════════════════════════════════════════════
 
 Base URL: http://localhost:3001

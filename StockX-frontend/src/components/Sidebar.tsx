@@ -100,7 +100,7 @@ export default function Sidebar() {
           </div>
           <div>
             <span className="font-bold text-white text-base tracking-tight leading-none block">
-              StockFlow
+              StockX
             </span>
             <span className="text-[11px] text-gray-400 font-medium leading-none block mt-0.5">
               Operations Portal

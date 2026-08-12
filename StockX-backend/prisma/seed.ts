@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seed for StockFlow...');
+  console.log('🌱 Starting database seed for StockX...');
 
   // 1. Clean existing data (in correct order of foreign key dependencies)
   console.log('🧹 Cleaning up old records...');

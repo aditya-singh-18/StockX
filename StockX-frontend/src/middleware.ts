@@ -5,8 +5,8 @@ import { API_BASE_URL } from '@/lib/api';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  let accessToken = request.cookies.get('stockflow_access_token')?.value;
-  const refreshToken = request.cookies.get('stockflow_refresh_token')?.value;
+  let accessToken = request.cookies.get('stockx_access_token')?.value;
+  const refreshToken = request.cookies.get('stockx_refresh_token')?.value;
   let isAuthenticated = Boolean(accessToken || refreshToken);
 
   const isAuthRoute = pathname === '/login';
@@ -54,10 +54,10 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     const response = NextResponse.redirect(loginUrl);
-    response.cookies.set('stockflow_access_token', '', { path: '/', maxAge: 0 });
-    response.cookies.set('stockflow_token_client', '', { path: '/', maxAge: 0 });
-    response.cookies.set('stockflow_refresh_token', '', { path: '/', maxAge: 0 });
-    response.cookies.set('stockflow_user', '', { path: '/', maxAge: 0 });
+    response.cookies.set('stockx_access_token', '', { path: '/', maxAge: 0 });
+    response.cookies.set('stockx_token_client', '', { path: '/', maxAge: 0 });
+    response.cookies.set('stockx_refresh_token', '', { path: '/', maxAge: 0 });
+    response.cookies.set('stockx_user', '', { path: '/', maxAge: 0 });
     return response;
   }
 
@@ -79,10 +79,10 @@ export async function middleware(request: NextRequest) {
   if (refreshedData) {
     const requestHeaders = new Headers(request.headers);
     // Forward refreshed cookies in request headers so SSR Server Components can read them immediately
-    request.cookies.set('stockflow_access_token', refreshedData.accessToken);
-    request.cookies.set('stockflow_token_client', refreshedData.accessToken);
+    request.cookies.set('stockx_access_token', refreshedData.accessToken);
+    request.cookies.set('stockx_token_client', refreshedData.accessToken);
     if (refreshedData.refreshToken) {
-      request.cookies.set('stockflow_refresh_token', refreshedData.refreshToken);
+      request.cookies.set('stockx_refresh_token', refreshedData.refreshToken);
     }
 
     const response = NextResponse.next({
@@ -104,7 +104,7 @@ function applyCookies(
 ) {
   const isProduction = process.env.NODE_ENV === 'production';
 
-  response.cookies.set('stockflow_access_token', data.accessToken, {
+  response.cookies.set('stockx_access_token', data.accessToken, {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax',
@@ -112,7 +112,7 @@ function applyCookies(
     maxAge: 15 * 60,
   });
 
-  response.cookies.set('stockflow_token_client', data.accessToken, {
+  response.cookies.set('stockx_token_client', data.accessToken, {
     httpOnly: false,
     secure: isProduction,
     sameSite: 'lax',
@@ -121,7 +121,7 @@ function applyCookies(
   });
 
   if (data.refreshToken) {
-    response.cookies.set('stockflow_refresh_token', data.refreshToken, {
+    response.cookies.set('stockx_refresh_token', data.refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'lax',
@@ -131,7 +131,7 @@ function applyCookies(
   }
 
   if (data.user) {
-    response.cookies.set('stockflow_user', JSON.stringify(data.user), {
+    response.cookies.set('stockx_user', JSON.stringify(data.user), {
       httpOnly: false,
       secure: isProduction,
       sameSite: 'lax',

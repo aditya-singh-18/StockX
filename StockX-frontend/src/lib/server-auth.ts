@@ -15,9 +15,9 @@ export interface ServerAuthResult {
  */
 export async function getServerAuth(): Promise<ServerAuthResult> {
   const cookieStore = await cookies();
-  let accessToken = cookieStore.get('stockflow_access_token')?.value || undefined;
-  const refreshToken = cookieStore.get('stockflow_refresh_token')?.value || undefined;
-  const userCookie = cookieStore.get('stockflow_user')?.value || null;
+  let accessToken = cookieStore.get('stockx_access_token')?.value || undefined;
+  const refreshToken = cookieStore.get('stockx_refresh_token')?.value || undefined;
+  const userCookie = cookieStore.get('stockx_user')?.value || null;
 
   let user: UserSession | null = null;
   if (userCookie) {

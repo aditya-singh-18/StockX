@@ -3,7 +3,7 @@ import { API_BASE_URL } from '@/lib/api';
 
 export async function POST(req: NextRequest) {
   try {
-    const refreshToken = req.cookies.get('stockflow_refresh_token')?.value;
+    const refreshToken = req.cookies.get('stockx_refresh_token')?.value;
 
     if (!refreshToken) {
       return NextResponse.json(
@@ -29,9 +29,10 @@ export async function POST(req: NextRequest) {
         { status: 401 },
       );
       // Clear cookies on refresh failure
-      response.cookies.set('stockflow_access_token', '', { path: '/', maxAge: 0 });
-      response.cookies.set('stockflow_token_client', '', { path: '/', maxAge: 0 });
-      response.cookies.set('stockflow_refresh_token', '', { path: '/', maxAge: 0 });
+      response.cookies.set('stockx_access_token', '', { path: '/', maxAge: 0 });
+      response.cookies.set('stockx_token_client', '', { path: '/', maxAge: 0 });
+      response.cookies.set('stockx_refresh_token', '', { path: '/', maxAge: 0 });
+      response.cookies.set('stockx_user', '', { path: '/', maxAge: 0 });
       return response;
     }
 
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({ success: true, accessToken });
 
     // 1. Update Access Token Cookie (15 Minutes) - HttpOnly
-    response.cookies.set('stockflow_access_token', accessToken, {
+    response.cookies.set('stockx_access_token', accessToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'lax',
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 2. Update Client Token Cookie
-    response.cookies.set('stockflow_token_client', accessToken, {
+    response.cookies.set('stockx_token_client', accessToken, {
       httpOnly: false,
       secure: isProduction,
       sameSite: 'lax',
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     // 3. Update Refresh Token Cookie (7 Days)
     if (newRefreshToken) {
-      response.cookies.set('stockflow_refresh_token', newRefreshToken, {
+      response.cookies.set('stockx_refresh_token', newRefreshToken, {
         httpOnly: true,
         secure: isProduction,
         sameSite: 'lax',

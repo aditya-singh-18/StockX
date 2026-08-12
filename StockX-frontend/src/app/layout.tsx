@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'StockFlow — Mini ERP + CRM Operations Portal',
-  description: 'Clean operations portal for customer CRM, inventory tracking, and atomic sales challan fulfillment.',
+  title: 'StockX — Mini ERP + CRM Operations Portal',
+  description: 'Operations portal for wholesale distribution, inventory, and sales challan fulfillment.',
 };
 
 export default function RootLayout({

@@ -12,7 +12,7 @@ export default function LoginPage() {
           <div className="w-10 h-10 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-xl shadow-sm">
             S
           </div>
-          <span className="text-2xl font-bold tracking-tight text-white">StockFlow</span>
+          <span className="text-2xl font-bold tracking-tight text-white">StockX</span>
         </div>
         <p className="text-center text-sm text-muted-foreground">
           Mini ERP + CRM Operations Portal

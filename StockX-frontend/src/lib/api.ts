@@ -20,9 +20,9 @@ export interface ApiErrorResponse {
 
 function getClientToken(): string | null {
   if (typeof window === 'undefined') return null;
-  const match = document.cookie.match(new RegExp('(?:^|; )stockflow_token_client=([^;]*)'));
+  const match = document.cookie.match(new RegExp('(?:^|; )stockx_token_client=([^;]*)'));
   if (match && match[1]) return decodeURIComponent(match[1]);
-  const fallback = document.cookie.match(new RegExp('(?:^|; )stockflow_access_token=([^;]*)'));
+  const fallback = document.cookie.match(new RegExp('(?:^|; )stockx_access_token=([^;]*)'));
   return fallback && fallback[1] ? decodeURIComponent(fallback[1]) : null;
 }
 
