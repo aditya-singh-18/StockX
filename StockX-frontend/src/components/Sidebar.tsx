@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
@@ -9,42 +9,68 @@ import {
   ScrollText,
   Settings,
   LogOut,
-  Shield,
   Loader2,
 } from 'lucide-react';
+import { usePermissions } from '@/lib/use-permissions';
+import { useAuth } from '@/lib/auth-context';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 
-interface SidebarProps {
-  user: {
-    id?: string;
-    name?: string;
-    email?: string;
-    role?: string;
-    permissions?: string[];
-  } | null;
+interface NavItemConfig {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  requiredPermission?: string;
 }
 
-// Exactly 5 items - strictly matching backend capabilities
-const NAVIGATION_ITEMS = [
-  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Customers', href: '/dashboard/customers', icon: Users, permission: 'customer:read' },
-  { name: 'Inventory', href: '/dashboard/inventory', icon: Package, permission: 'product:read' },
-  { name: 'Challans', href: '/dashboard/challans', icon: ScrollText, permission: 'challan:read' },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+const ALL_NAVIGATION_ITEMS: NavItemConfig[] = [
+  {
+    name: 'Overview',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+  },
+  {
+    name: 'Customers',
+    href: '/customers',
+    icon: Users,
+    requiredPermission: PERMISSIONS.CUSTOMER_READ,
+  },
+  {
+    name: 'Inventory',
+    href: '/inventory',
+    icon: Package,
+    requiredPermission: PERMISSIONS.PRODUCT_READ,
+  },
+  {
+    name: 'Challans',
+    href: '/challans',
+    icon: ScrollText,
+    requiredPermission: PERMISSIONS.CHALLAN_READ,
+  },
+  {
+    name: 'Settings',
+    href: '/settings',
+    icon: Settings,
+    requiredPermission: PERMISSIONS.USER_MANAGE,
+  },
 ];
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
+  const { user, permissions } = usePermissions();
+  const { logout } = useAuth();
   const [loggingOut, setLoggingOut] = React.useState(false);
 
-  const handleLogout = async () => {
+  const visibleNavItems = React.useMemo(() => {
+    return ALL_NAVIGATION_ITEMS.filter((item) => {
+      if (!item.requiredPermission) return true;
+      return hasPermission(permissions, item.requiredPermission);
+    });
+  }, [permissions]);
+
+  const handleLogoutClick = async () => {
     setLoggingOut(true);
     try {
-      await fetch('/api/logout', { method: 'POST' });
-      router.push('/login');
-      router.refresh();
-    } catch {
-      router.push('/login');
+      await logout();
     } finally {
       setLoggingOut(false);
     }
@@ -53,7 +79,7 @@ export default function Sidebar({ user }: SidebarProps) {
   const getRoleBadgeColor = (role?: string) => {
     switch (role) {
       case 'Admin':
-        return 'bg-purple-950/60 text-purple-300 border-purple-800/60';
+        return 'bg-brand-500/20 text-brand-300 border-brand-500/40';
       case 'Sales':
         return 'bg-blue-950/60 text-blue-300 border-blue-800/60';
       case 'Warehouse':
@@ -68,9 +94,8 @@ export default function Sidebar({ user }: SidebarProps) {
   return (
     <aside className="w-64 bg-[#111113] border-r border-[#27272A] flex flex-col justify-between shrink-0 h-screen sticky top-0">
       <div>
-        {/* Workspace Brand Header */}
         <div className="h-16 flex items-center px-6 border-b border-[#27272A] gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-base shadow-sm">
+          <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-base shadow-xs">
             S
           </div>
           <div>
@@ -83,29 +108,23 @@ export default function Sidebar({ user }: SidebarProps) {
           </div>
         </div>
 
-        {/* 5-Item Navigation */}
         <nav className="p-3 space-y-1 mt-2">
-          {NAVIGATION_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const isActive =
               item.href === '/dashboard'
-                ? pathname === '/dashboard'
+                ? pathname === '/dashboard' || pathname === '/'
                 : pathname.startsWith(item.href);
-
-            const hasPermission =
-              !item.permission ||
-              user?.role === 'Admin' ||
-              user?.permissions?.includes(item.permission);
 
             return (
               <a
                 key={item.name}
                 href={item.href}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-brand-500/15 text-brand-400 font-semibold border border-brand-500/20'
+                    ? 'bg-brand-500/15 text-brand-400 font-semibold border border-brand-500/30 shadow-xs'
                     : 'text-gray-400 hover:bg-[#18181B] hover:text-gray-100'
-                } ${!hasPermission ? 'opacity-40' : ''}`}
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <Icon
@@ -113,21 +132,15 @@ export default function Sidebar({ user }: SidebarProps) {
                   />
                   <span>{item.name}</span>
                 </div>
-                {!hasPermission && (
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-gray-500">
-                    Locked
-                  </span>
-                )}
               </a>
             );
           })}
         </nav>
       </div>
 
-      {/* User Profile & Logout Bottom Section */}
       <div className="p-3 border-t border-[#27272A] bg-[#0E0E10]">
-        <div className="p-3 bg-[#141416] border border-[#27272A] rounded-lg mb-2 shadow-sm">
-          <div className="flex items-center justify-between mb-1.5">
+        <div className="p-3 bg-[#141416] border border-[#27272A] rounded-lg mb-2 shadow-xs">
+          <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-semibold text-gray-100 truncate">
               {user?.name || 'Authorized User'}
             </span>
@@ -140,16 +153,10 @@ export default function Sidebar({ user }: SidebarProps) {
             </span>
           </div>
           <p className="text-xs text-gray-400 truncate font-mono">{user?.email || 'user@test.com'}</p>
-          <div className="mt-2 pt-2 border-t border-[#27272A] flex items-center justify-between text-[11px] text-gray-400">
-            <span className="flex items-center gap-1">
-              <Shield className="w-3 h-3 text-brand-400" />
-              <span>{user?.permissions?.length || 0} Capabilities</span>
-            </span>
-          </div>
         </div>
 
         <button
-          onClick={handleLogout}
+          onClick={handleLogoutClick}
           disabled={loggingOut}
           className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-red-400 hover:bg-red-950/30 rounded-lg border border-transparent hover:border-red-900/40 transition-colors disabled:opacity-50"
         >
